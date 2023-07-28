@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.mdx": "mdx",
+        "*.yml": "yaml",
+        "*.toml": "toml",
+        "fd_sha256.h": "c"
+    }
+}
