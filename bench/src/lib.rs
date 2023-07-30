@@ -17,9 +17,9 @@ pub fn convert_to_array<T>(v: Vec<T>) -> [T; 63] {
         .unwrap_or_else(|v: Vec<T>| panic!("Expected a Vec of length 63 but it was {}", v.len()))
 }
 
-pub fn hash_leaf(node: &mut fd_bmtree20_node, data: &mut &[&[u8]; 2]) {
+pub fn hash_leaf(node: &mut fd_bmtree32_node, data: &mut &[&[u8]; 2]) {
     unsafe {
-        fd_bmtree20_hash_leaf(
+        fd_bmtree32_hash_leaf(
             node,
             data as *mut _ as *mut c_void,
             mem::size_of::<&[&[u8]; 2]>().try_into().unwrap(),
@@ -29,31 +29,31 @@ pub fn hash_leaf(node: &mut fd_bmtree20_node, data: &mut &[&[u8]; 2]) {
 
 pub fn generate_leaf_nodes(
     data: Vec<(Vec<u8>, u8)>,
-    mut leaves: Vec<fd_bmtree20_node>,
-) -> Vec<fd_bmtree20_node> {
+    mut leaves: Vec<fd_bmtree32_node>,
+) -> Vec<fd_bmtree32_node> {
     for i in 0..63 {
-        let mut n = fd_bmtree20_node { hash: [0u8; 32] };
-        let mut k = &[data[i].0.as_slice(), (&data[i].1.to_be_bytes())];
+        let mut n = fd_bmtree32_node { hash: [0u8; 32] };
+        let mut k = &[data[i].0.as_slice(), &data[i].1.to_be_bytes()];
         hash_leaf(&mut n, &mut k);
         leaves.push(n)
     }
     leaves
 }
-pub fn get_root_from_tree(tree: fd_bmtree20_commit, leaf_cnt: usize) -> Hash {
+pub fn get_root_from_tree(tree: fd_bmtree32_commit, leaf_cnt: usize) -> Hash {
     Hash::new_from_array(tree.node_buf[leaf_cnt - 1].hash)
 }
 
 pub fn generate_merkle_tree(
     leaf_cnt: u64,
-    nodes: Vec<fd_bmtree20_node>,
-) -> (fd_bmtree20_commit_t, u8) {
-    let mut state = fd_bmtree20_commit_t {
+    nodes: Vec<fd_bmtree32_node>,
+) -> (fd_bmtree32_commit_t, u8) {
+    let mut state = fd_bmtree32_commit_t {
         leaf_cnt,
         __bindgen_padding_0: [0u64; 3],
         node_buf: convert_to_array(nodes),
     };
 
-    let root = unsafe { fd_bmtree20_commit_fini(&mut state) };
+    let root = unsafe { fd_bmtree32_commit_fini(&mut state) };
     (state, unsafe { *root })
 }
 
@@ -82,6 +82,18 @@ pub fn read_from_file(path: String) -> Vec<(String, u8)> {
         .collect()
 }
 
+#[derive(Debug)]
+struct TryFromSliceError(());
+
+fn slice_to_array_32<T>(slice: &[T]) -> Result<&[T; 32], TryFromSliceError> {
+    if slice.len() <= 32 {
+        let ptr = slice.as_ptr() as *const [T; 32];
+        unsafe { Ok(&*ptr) }
+    } else {
+        Err(TryFromSliceError(()))
+    }
+}
+
 /// just for storing the data, not representative of the structure used in runtime
 #[derive(Serialize, Deserialize)]
 pub struct Receipt {
@@ -91,17 +103,27 @@ pub struct Receipt {
 
 #[cfg(test)]
 mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
-    use super::*;
+    use std::slice::from_raw_parts;
 
+    use super::*;
+    use firedancer_sys::ballet::*;
+    use solana_merkle_tree::MerkleTree;
     #[test]
     fn main_test() {
         let mut sigs = vec![];
         let mut statuses = vec![];
-        for _ in 0..63 {
+        for _ in 0..100 {
             sigs.push(Signature::new_unique().to_string().as_bytes().to_owned());
             statuses.push(rand::thread_rng().gen_range(0..2) as u8);
         }
+        save_to_file(
+            sigs.iter()
+                .map(|s| from_utf8(s).unwrap().to_string())
+                .zip(statuses.clone().into_iter())
+                .collect::<Vec<(String, u8)>>(),
+            String::from("src/data.json"),
+        )
+        .unwrap();
         let data: Vec<(Vec<u8>, u8)> = sigs
             .clone()
             .into_iter()
@@ -110,39 +132,78 @@ mod tests {
             .collect();
         // println!("len {} {}", data[0].0.len(), data[0].1);
         let mut nodes = vec![];
-
-        for i in 0..63 {
-            let mut n = fd_bmtree20_node { hash: [0u8; 32] };
-            let mut k = &[data[i].0.as_slice(), (&data[i].1.to_be_bytes())];
-            unsafe {
-                fd_bmtree20_hash_leaf(
-                    &mut n,
-                    &mut k as *mut _ as *mut c_void,
-                    mem::size_of::<&[&[u8]; 2]>().try_into().unwrap(),
-                )
-            };
-
+        let mut leaves = vec![];
+        for _ in 0..63 {
+            let n = fd_bmtree32_node { hash: [0u8; 32] };
             nodes.push(n);
         }
 
-        let mut state = fd_bmtree20_commit_t {
-            leaf_cnt: 63,
-            __bindgen_padding_0: [0u64; 3],
-            node_buf: convert_to_array(nodes),
-        };
+        for i in 0..100 {
+            let mut n = fd_bmtree32_node { hash: [0u8; 32] };
+            // let mut k = &[data[i].0.as_slice(), (&data[i].1.to_be_bytes())];
+            // mem::size_of::<&[&[u8]; 2]>().try_into().unwrap()
+            let mut k = data[i].0.as_slice();
+            unsafe {
+                fd_bmtree32_hash_leaf(
+                    &mut n,
+                    &mut k as *mut _ as *mut c_void,
+                    mem::size_of::<&[u8]>().try_into().unwrap(),
+                )
+            };
 
-        let _root = unsafe { fd_bmtree20_commit_fini(&mut state) };
+            leaves.push(n);
+        }
+        let node_buf = convert_to_array(nodes);
+        // println!(
+        //     "nodebuf {:?} {:?}",
+        //     Hash::new_from_array(node_buf[62].hash).to_string(),
+        //     node_buf[62].hash
+        // );
+        let mut state = fd_bmtree32_commit_t {
+            leaf_cnt: 100,
+            __bindgen_padding_0: [0u64; 3],
+            node_buf: node_buf,
+        };
+        for i in 0..100 {
+            unsafe {
+                fd_bmtree32_commit_append(&mut state, &leaves[i], (i + 1).try_into().unwrap());
+            }
+        }
+
+        let _root = unsafe { fd_bmtree32_commit_fini(&mut state) };
+        // println!(
+        //     "check {:?}",
+        //     sigs.iter()
+        //         .map(|s| from_utf8(s).unwrap().to_string())
+        //         .zip(statuses.iter())
+        //         .collect::<Vec<(String, &u8)>>()[0]
+        // );
+        // println!(
+        //     "root {:?}",
+        //     leaves
+        //         .iter()
+        //         .map(|l| Hash::new_from_array(l.hash).to_string())
+        //         .collect::<Vec<String>>()
+        // );
+        let root = unsafe { from_raw_parts(_root, 32) };
+        // let mut y = [0; 32];
+        // {
+        //     let y: &mut [u8; 32] = &mut y;
+        //     y.copy_from_slice(&root[..32]);
+        // }
+        // println!("root 1 {:?}", Hash::new_from_array(y).to_string());
         println!(
-            "data {:?}",
-            sigs.iter()
-                .map(|s| from_utf8(s).unwrap().to_string())
-                .zip(statuses.iter())
-                .collect::<Vec<(String, &u8)>>()
+            "firedancer bmtree32 root {:?}",
+            Hash::new_from_array(*slice_to_array_32(root).unwrap()).to_string()
         );
-        println!(
-            "root {:?}",
-            Hash::new_from_array(state.node_buf[62].hash).to_string()
-        );
-        println!("root 1 {}", unsafe { *_root });
+        let mut data = read_from_file("src/data.json".to_owned());
+        // println!("check 2 {:?}", data[0]);
+        let mut data = data
+            .iter_mut()
+            .map(|item| item.0.as_bytes())
+            .collect::<Vec<&[u8]>>();
+
+        let tree = MerkleTree::new(data.as_slice());
+        println!("solana merkle root {:?}", tree.get_root().unwrap());
     }
 }

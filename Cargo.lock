@@ -917,6 +917,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
 
 [[package]]
+name = "fast-math"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2465292146cdfc2011350fe3b1c616ac83cf0faeedb33463ba1c332ed8948d66"
+dependencies = [
+ "ieee754",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1157,6 +1166,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ieee754"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9007da9cacbd3e6343da136e98b0d2df013f553d35bdec8b518f07bea768e19c"
+
+[[package]]
 name = "im"
 version = "15.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1356,6 +1371,12 @@ name = "log"
 version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b06a4cde4c0f271a446782e3eff8de789548ce57dbc8eca9292c27f4a42004b4"
+
+[[package]]
+name = "matches"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
 name = "memchr"
@@ -2037,9 +2058,9 @@ checksum = "62bb4feee49fdd9f707ef802e22365a35de4b7b299de4763d44bfea899442ff9"
 
 [[package]]
 name = "solana-frozen-abi"
-version = "1.16.5"
+version = "1.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15610c43f150a99322c295c903cc521fa6921002ceed29fc419b7832c4ce4a4c"
+checksum = "c33ec119dc1bb0395b50d389d31ee6015cc81570d31f19cb3dca0ffff5f8f117"
 dependencies = [
  "ahash 0.8.3",
  "blake3",
@@ -2070,9 +2091,9 @@ dependencies = [
 
 [[package]]
 name = "solana-frozen-abi-macro"
-version = "1.16.5"
+version = "1.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6f5a146d452c451b052034ac9bb3fe7fe323fe0c891c3e71dcda50d944c5ad1"
+checksum = "b1feba80a564f52092da4c8a93bebc66f39665ebefd02d93bd54ef10453f179d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2082,9 +2103,9 @@ dependencies = [
 
 [[package]]
 name = "solana-logger"
-version = "1.16.5"
+version = "1.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9302be0d873cdd53768fae0eb0edb339337831fab45490fae0c2871ef720ad31"
+checksum = "853aab82ead804a201f0edb036e5ff73b9bc8e97d9c1b9b91aeee2f6435073a2"
 dependencies = [
  "env_logger",
  "lazy_static",
@@ -2092,10 +2113,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "solana-program"
-version = "1.16.5"
+name = "solana-merkle-tree"
+version = "1.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ad3f1977e6bf4f3f2bbf3d8988c58b8729c6aa1086b908eb50b138ddc6a812c"
+checksum = "5a99d49f9e8038d167ba848e7218c9ab61796c5bc506a57fe940e3acf22b92be"
+dependencies = [
+ "fast-math",
+ "matches",
+ "solana-program",
+]
+
+[[package]]
+name = "solana-program"
+version = "1.16.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3afaa80737c3f26927df136e46b568525709371a5e161e1f490f1dd5defe9698"
 dependencies = [
  "ark-bn254",
  "ark-ec",
@@ -2147,9 +2179,9 @@ dependencies = [
 
 [[package]]
 name = "solana-sdk"
-version = "1.16.5"
+version = "1.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22e86f3523fa2612c7c7748b6fdbc16006e84a2bfda06c5835c9389bdf151621"
+checksum = "f53c6ffc2ce2fd2594f6dc1eb1e459843b5f9b008aae10e1cb3d6fef58e63706"
 dependencies = [
  "assert_matches",
  "base64 0.21.2",
@@ -2200,9 +2232,9 @@ dependencies = [
 
 [[package]]
 name = "solana-sdk-macro"
-version = "1.16.5"
+version = "1.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a3673ef415e5d2673f00b78b4115536144c98f3253cc07b63b0df6b42720dc6"
+checksum = "11e11e29d859ffa265e1abb6f7aa12afe6c34b64c75b56a80b777f8f957074ac"
 dependencies = [
  "bs58",
  "proc-macro2",
@@ -2346,6 +2378,7 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "serde_json",
+ "solana-merkle-tree",
  "solana-sdk",
 ]
 
