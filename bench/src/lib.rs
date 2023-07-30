@@ -1,5 +1,6 @@
 use std::io::{Error, Write};
 use std::os::raw::c_void;
+use std::slice::from_raw_parts;
 use std::str::{from_utf8, FromStr};
 use std::{fs, io, mem};
 
@@ -30,31 +31,45 @@ pub fn hash_leaf(node: &mut fd_bmtree32_node, data: &mut &[&[u8]; 2]) {
 pub fn generate_leaf_nodes(
     data: Vec<(Vec<u8>, u8)>,
     mut leaves: Vec<fd_bmtree32_node>,
+    leaf_cnt: u64,
 ) -> Vec<fd_bmtree32_node> {
-    for i in 0..63 {
+    for i in 0..(leaf_cnt as usize) {
         let mut n = fd_bmtree32_node { hash: [0u8; 32] };
         let mut k = &[data[i].0.as_slice(), &data[i].1.to_be_bytes()];
+
         hash_leaf(&mut n, &mut k);
         leaves.push(n)
     }
     leaves
 }
-pub fn get_root_from_tree(tree: fd_bmtree32_commit, leaf_cnt: usize) -> Hash {
-    Hash::new_from_array(tree.node_buf[leaf_cnt - 1].hash)
+pub fn get_root_from_tree(byte: &mut u8) -> Hash {
+    let root = unsafe { from_raw_parts(byte, 32) };
+
+    Hash::new_from_array(*slice_to_array_32(root).unwrap())
 }
 
 pub fn generate_merkle_tree(
     leaf_cnt: u64,
-    nodes: Vec<fd_bmtree32_node>,
-) -> (fd_bmtree32_commit_t, u8) {
+    leaves: Vec<fd_bmtree32_node>,
+) -> (fd_bmtree32_commit_t, *mut u8) {
+    let mut nodes = vec![];
+    for _ in 0..63 {
+        let n = fd_bmtree32_node { hash: [0u8; 32] };
+        nodes.push(n);
+    }
     let mut state = fd_bmtree32_commit_t {
         leaf_cnt,
         __bindgen_padding_0: [0u64; 3],
         node_buf: convert_to_array(nodes),
     };
 
+    for i in 0..leaf_cnt {
+        unsafe {
+            fd_bmtree32_commit_append(&mut state, &leaves[i as usize], (i + 1).try_into().unwrap());
+        }
+    }
     let root = unsafe { fd_bmtree32_commit_fini(&mut state) };
-    (state, unsafe { *root })
+    (state, root)
 }
 
 pub fn save_to_file(data: Vec<(String, u8)>, path: String) -> Result<(), Error> {
@@ -140,8 +155,7 @@ mod tests {
 
         for i in 0..100 {
             let mut n = fd_bmtree32_node { hash: [0u8; 32] };
-            // let mut k = &[data[i].0.as_slice(), (&data[i].1.to_be_bytes())];
-            // mem::size_of::<&[&[u8]; 2]>().try_into().unwrap()
+
             let mut k = data[i].0.as_slice();
             unsafe {
                 fd_bmtree32_hash_leaf(
@@ -154,22 +168,24 @@ mod tests {
             leaves.push(n);
         }
         let node_buf = convert_to_array(nodes);
-        // println!(
-        //     "nodebuf {:?} {:?}",
-        //     Hash::new_from_array(node_buf[62].hash).to_string(),
-        //     node_buf[62].hash
-        // );
+
         let mut state = fd_bmtree32_commit_t {
             leaf_cnt: 100,
             __bindgen_padding_0: [0u64; 3],
-            node_buf: node_buf,
+            node_buf,
         };
         for i in 0..100 {
             unsafe {
                 fd_bmtree32_commit_append(&mut state, &leaves[i], (i + 1).try_into().unwrap());
             }
         }
-
+        // let mut k = &[data[i].0.as_slice(), (&data[i].1.to_be_bytes())];
+        // mem::size_of::<&[&[u8]; 2]>().try_into().unwrap()
+        // println!(
+        //     "nodebuf {:?} {:?}",
+        //     Hash::new_from_array(node_buf[62].hash).to_string(),
+        //     node_buf[62].hash
+        // );
         let _root = unsafe { fd_bmtree32_commit_fini(&mut state) };
         // println!(
         //     "check {:?}",
