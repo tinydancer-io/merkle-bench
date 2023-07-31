@@ -65,7 +65,7 @@ pub fn generate_merkle_tree(
 
     for i in 0..leaf_cnt {
         unsafe {
-            fd_bmtree32_commit_append(&mut state, &leaves[i as usize], (i + 1) as _);
+            fd_bmtree32_commit_append(&mut state, &leaves[i as usize], 1);
         }
     }
     let root = unsafe { fd_bmtree32_commit_fini(&mut state) };
