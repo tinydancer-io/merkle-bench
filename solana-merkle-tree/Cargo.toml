@@ -1,0 +1,13 @@
+[package]
+name = "solana-merkle-tree"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fast-math = "0.1.1"
+solana-program = "1.16.0"
+
+[dev-dependencies]
+hex = "0.4.3"

@@ -1,13 +1,15 @@
 use std::str::from_utf8;
 
+use firedancer_sys::ballet::*;
 use rand::Rng;
+use solana_merkle_tree::MerkleTree;
 use solana_sdk::signature::Signature;
 use {glassbench::*, tiny_merkle_bench::*};
 
 fn fd_merkle(b: &mut Bench) {
     let mut sigs = vec![];
     let mut statuses = vec![];
-    for _ in 0..100 {
+    for _ in 0..1000 {
         sigs.push(Signature::new_unique().to_string().as_bytes().to_owned());
         statuses.push(rand::thread_rng().gen_range(0..2) as u8);
     }
@@ -21,16 +23,27 @@ fn fd_merkle(b: &mut Bench) {
     )
     .unwrap();
     let data: Vec<(Vec<u8>, u8)> = sigs.into_iter().zip(statuses.clone().into_iter()).collect();
-    b.task("Generate merkle tree of 100 leaves", |task| {
+    // let fd_data = data[0..1000].to_vec();
+
+    b.task("Generate firedancer merkle tree of 1000 leaves", |task| {
         task.iter(|| {
             let leaves = vec![];
-            // println!("len {:?}", data.len());
-            let leaves = generate_leaf_nodes(data.clone(), leaves, 100);
-            let (tree, root_mem) = generate_merkle_tree(100, leaves);
-            // let root = get_root_from_tree(unsafe { &mut *root_mem });
-            // println!("root {:?}", root.to_string());
+            let leaves = generate_leaf_nodes(data.to_vec().clone(), leaves, 1000);
+
+            let (tree, root_mem) = generate_merkle_tree(1000, leaves);
+            let root = get_root_from_tree(unsafe { &mut *root_mem });
+        });
+    });
+
+    let data = data
+        .iter()
+        .map(|item| item.0.as_slice())
+        .collect::<Vec<&[u8]>>();
+    b.task("Solana merkle tree with 1000 leaves", |task| {
+        task.iter(|| {
+            let tree = MerkleTree::new(data.as_slice());
         });
     });
 }
 
-glassbench!("Benchmark firedancer binary merkle tree", fd_merkle,);
+glassbench!("Benchmark merkle tree with Solanan Signatures", fd_merkle,);

@@ -1091,6 +1091,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "443144c8cdadd93ebf52ddb4056d257f5b52c04d3c804e657d19eb73fc33668b"
 
 [[package]]
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
 name = "hmac"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1371,12 +1377,6 @@ name = "log"
 version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b06a4cde4c0f271a446782e3eff8de789548ce57dbc8eca9292c27f4a42004b4"
-
-[[package]]
-name = "matches"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
 name = "memchr"
@@ -2114,12 +2114,10 @@ dependencies = [
 
 [[package]]
 name = "solana-merkle-tree"
-version = "1.16.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a99d49f9e8038d167ba848e7218c9ab61796c5bc506a57fe940e3acf22b92be"
+version = "0.1.0"
 dependencies = [
  "fast-math",
- "matches",
+ "hex",
  "solana-program",
 ]
 

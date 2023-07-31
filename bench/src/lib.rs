@@ -18,12 +18,12 @@ pub fn convert_to_array<T>(v: Vec<T>) -> [T; 63] {
         .unwrap_or_else(|v: Vec<T>| panic!("Expected a Vec of length 63 but it was {}", v.len()))
 }
 
-pub fn hash_leaf(node: &mut fd_bmtree32_node, data: &mut &[&[u8]; 2]) {
+pub fn hash_leaf(node: &mut fd_bmtree32_node, data: &mut &[u8]) {
     unsafe {
         fd_bmtree32_hash_leaf(
             node,
             data as *mut _ as *mut c_void,
-            mem::size_of::<&[&[u8]; 2]>().try_into().unwrap(),
+            mem::size_of::<&[u8]>().try_into().unwrap(),
         )
     };
 }
@@ -35,8 +35,8 @@ pub fn generate_leaf_nodes(
 ) -> Vec<fd_bmtree32_node> {
     for i in 0..(leaf_cnt as usize) {
         let mut n = fd_bmtree32_node { hash: [0u8; 32] };
-        let mut k = &[data[i].0.as_slice(), &data[i].1.to_be_bytes()];
-
+        // let mut k = &[data[i].0.as_slice(), &data[i].1.to_be_bytes()];
+        let mut k = data[i].0.as_slice();
         hash_leaf(&mut n, &mut k);
         leaves.push(n)
     }
@@ -65,7 +65,7 @@ pub fn generate_merkle_tree(
 
     for i in 0..leaf_cnt {
         unsafe {
-            fd_bmtree32_commit_append(&mut state, &leaves[i as usize], (i + 1).try_into().unwrap());
+            fd_bmtree32_commit_append(&mut state, &leaves[i as usize], (i + 1) as _);
         }
     }
     let root = unsafe { fd_bmtree32_commit_fini(&mut state) };
