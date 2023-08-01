@@ -14,14 +14,14 @@ fn fd_merkle(b: &mut Bench) {
         statuses.push(rand::thread_rng().gen_range(0..2) as u8);
     }
 
-    save_to_file(
-        sigs.iter()
-            .map(|s| from_utf8(s).unwrap().to_string())
-            .zip(statuses.clone().into_iter())
-            .collect::<Vec<(String, u8)>>(),
-        String::from("src/data.json"),
-    )
-    .unwrap();
+    // save_to_file(
+    //     sigs.iter()
+    //         .map(|s| from_utf8(s).unwrap().to_string())
+    //         .zip(statuses.clone().into_iter())
+    //         .collect::<Vec<(String, u8)>>(),
+    //     String::from("src/data.json"),
+    // )
+    // .unwrap();
     let data: Vec<(Vec<u8>, u8)> = sigs.into_iter().zip(statuses.clone().into_iter()).collect();
     // let fd_data = data[0..1000].to_vec();
 

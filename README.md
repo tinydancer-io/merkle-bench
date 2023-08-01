@@ -16,8 +16,20 @@ Linux Kernal - 6.2.0-20-generic
 Distro - Ubuntu 23.04
 ```
 
+### Flamegraph Setup
+Refer [these](https://github.com/flamegraph-rs/flamegraph#installation) steps to setup flamegraph generation
+
+If you face permission issues while using linux perf then use
+`sudo sysctl -w kernel.perf_event_paranoid=2`
+
+Then run the following command to generate flamegraph.
+`CARGO_PROFILE_BENCH_DEBUG=true cargo flamegraph --bench merkle_bench`
+
 ## Results
 
 Machine - `Intel i5 12400 w/ 16G Ram`
 
 ![Result-1](./r1.png)
+
+Flamegraph
+![Flamegraph-1](./flamegraph.svg)
