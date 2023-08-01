@@ -18,12 +18,13 @@ pub fn convert_to_array<T>(v: Vec<T>) -> [T; 63] {
         .unwrap_or_else(|v: Vec<T>| panic!("Expected a Vec of length 63 but it was {}", v.len()))
 }
 
-pub fn hash_leaf(node: &mut fd_bmtree32_node, data: &mut &[u8]) {
+pub fn hash_leaf(node: &mut fd_bmtree32_node, data: &mut &[&[u8]; 2]) {
+    // &mut &[&[u8]; 2])
     unsafe {
         fd_bmtree32_hash_leaf(
             node,
             data as *mut _ as *mut c_void,
-            mem::size_of::<&[u8]>().try_into().unwrap(),
+            mem::size_of::<&[&[u8]; 2]>().try_into().unwrap(),
         )
     };
 }
@@ -35,8 +36,8 @@ pub fn generate_leaf_nodes(
 ) -> Vec<fd_bmtree32_node> {
     for i in 0..(leaf_cnt as usize) {
         let mut n = fd_bmtree32_node { hash: [0u8; 32] };
-        // let mut k = &[data[i].0.as_slice(), &data[i].1.to_be_bytes()];
-        let mut k = data[i].0.as_slice();
+        let mut k = &[data[i].0.as_slice(), &data[i].1.to_be_bytes()];
+        // let mut k = data[i].0.as_slice();
         hash_leaf(&mut n, &mut k);
         leaves.push(n)
     }
@@ -219,7 +220,7 @@ mod tests {
             .map(|item| item.0.as_bytes())
             .collect::<Vec<&[u8]>>();
 
-        let tree = MerkleTree::new(data.as_slice());
-        println!("solana merkle root {:?}", tree.get_root().unwrap());
+        // let tree = MerkleTree::new(data.as_slice());
+        // println!("solana merkle root {:?}", tree.get_root().unwrap());
     }
 }

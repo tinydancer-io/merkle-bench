@@ -25,28 +25,34 @@ fn fd_merkle(b: &mut Bench) {
     let data: Vec<(Vec<u8>, u8)> = sigs.into_iter().zip(statuses.clone().into_iter()).collect();
     // let fd_data = data[0..1000].to_vec();
 
-    b.task(
-        "Generate firedancer merkle tree of 1 million leaves",
-        |task| {
-            task.iter(|| {
-                let leaves = vec![];
-                let leaves = generate_leaf_nodes(data.to_vec().clone(), leaves, 1000000);
+    b.task("Firedancer bmtree32 | 1M Leaves | Sig + Status", |task| {
+        task.iter(|| {
+            let leaves = vec![];
+            let leaves = generate_leaf_nodes(data.to_vec().clone(), leaves, 1000000);
 
-                let (tree, root_mem) = generate_merkle_tree(100000, leaves);
-                let root = get_root_from_tree(unsafe { &mut *root_mem });
-            });
-        },
-    );
-
+            let (_tree, _root_mem) = generate_merkle_tree(100000, leaves);
+            // let root = get_root_from_tree(unsafe { &mut *root_mem });
+            // println!("Firedancer's root {:?}", root.to_string());
+        });
+    });
     let data = data
         .iter()
-        .map(|item| item.0.as_slice())
-        .collect::<Vec<&[u8]>>();
-    b.task("Solana merkle tree with 1 million leaves", |task| {
+        .map(|item| vec![item.0.clone(), item.1.to_be_bytes().to_vec()])
+        .collect::<Vec<Vec<Vec<u8>>>>();
+
+    // let data = data
+    //     .iter()
+    //     .map(|item| item.0.as_slice())
+    //     .collect::<Vec<&[u8]>>();
+    b.task("solana-merkle-tree | 1M Leaves | Sig + Status", |task| {
         task.iter(|| {
-            let tree = MerkleTree::new(data.as_slice());
+            let _tree = MerkleTree::new_custom(data.clone());
+            // println!(
+            //     "Solana Labs's root {:?}",
+            //     tree.get_root().unwrap().to_string()
+            // );
         });
     });
 }
 
-glassbench!("Benchmark merkle tree with Solanan Signatures", fd_merkle,);
+glassbench!("Benchmark merkle tree with Solana Signatures", fd_merkle,);

@@ -1,0 +1,19 @@
+#! /bin/bash
+
+git submodules update --init --recursive
+
+cargo install bindgen-cli
+
+source ~/.bashrc
+
+cd firedancer
+./deps.sh
+make -j run
+
+cd ffi/rust/firedancer-sys
+
+cargo build
+
+cd ../../../../
+cargo build
+cargo bench
