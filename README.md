@@ -31,5 +31,5 @@ Machine - `Intel i5 12400 w/ 16G Ram`
 
 ![Result-1](./r1.png)
 
-Flamegraph
+
 ![Flamegraph-1](./flamegraph.svg)
