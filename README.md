@@ -5,7 +5,7 @@ This is a benchmark comparing merkle tree construction for receipts(Signature + 
 - [Solana-Merkle-Tree](https://crates.io/crates/solana-merkle-tree)
 - [Firedancer bmtree32](https://github.com/firedancer-io/firedancer/tree/main/src/ballet/bmtree)
 
-**Note: bmtree32 is written in pure C. This benchmark currently uses FFI therefore there is a certain performance(due to lack of inlining and optimisation)**
+**Note: bmtree32 is written in pure C. This benchmark currently uses FFI therefore there is a certain performance penalty(due to lack of inlining and optimisation)**
 
 System Info:
 ```
