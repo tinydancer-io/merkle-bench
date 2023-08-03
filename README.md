@@ -33,3 +33,8 @@ Machine - `Intel i5 12400 w/ 16G Ram`
 
 
 ![Flamegraph-1](./flamegraph.svg)
+
+Machine - `m3.large.x86`
+![image](https://github.com/tinydancer-io/merkle-bench/assets/32778608/5d544ecf-49a1-4be0-b50f-cabdbeee71f7)
+
+![Flamegraph-2](./amdflame.svg)
