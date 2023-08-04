@@ -1,6 +1,29 @@
 #! /bin/bash
 
-git submodules update --init --recursive
+if [[$(find ~/.cargo/bin/rustc -maxdepth 1 -type d | wc -l) -eq 0]]
+then
+  echo "installing rust"
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+fi
+
+echo "ensure that you have an ssh key thats connected to ur github account"
+if [ ! -f ~/.ssh/*.pub ]; then
+    echo "Please have an ssh key"
+fi
+
+git submodule init
+git submodule update
+
+subdircount=$(find firedancer -maxdepth 1 -type d | wc -l)
+
+if [[ "$subdircount" -eq 11 ]]
+then
+    echo "fd modules cloned"
+else
+    git submodule update --init --recursive
+    git submodule update --recursive --remote
+fi
+
 
 cargo install bindgen-cli
 
