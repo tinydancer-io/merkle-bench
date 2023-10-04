@@ -74,7 +74,7 @@ pub fn generate_merkle_tree(
     (state, root)
 }
 
-pub fn save_to_file(data: Vec<(String, u8)>, path: String) -> Result<(), Error> {
+pub fn save_to_file(data: Vec<(Hash, u8)>, path: String) -> Result<(), Error> {
     fs::write(
         path,
         serde_json::to_string(
@@ -90,7 +90,7 @@ pub fn save_to_file(data: Vec<(String, u8)>, path: String) -> Result<(), Error> 
     )?;
     Ok(())
 }
-pub fn read_from_file(path: String) -> Vec<(String, u8)> {
+pub fn read_from_file(path: String) -> Vec<(Hash, u8)> {
     let file = fs::File::open(path).expect("file should open read only");
     let nodes: Vec<Receipt> = serde_json::from_reader(file).unwrap();
     nodes
@@ -114,7 +114,7 @@ fn slice_to_array_32<T>(slice: &[T]) -> Result<&[T; 32], TryFromSliceError> {
 /// just for storing the data, not representative of the structure used in runtime
 #[derive(Serialize, Deserialize)]
 pub struct Receipt {
-    pub signature: String,
+    pub signature: Hash,
     pub status: u8,
 }
 
@@ -124,6 +124,7 @@ mod tests {
 
     use super::*;
     use firedancer_sys::ballet::*;
+    use rand::RngCore;
     use solana_merkle_tree::MerkleTree;
     #[test]
     fn main_test() {
@@ -133,15 +134,25 @@ mod tests {
             sigs.push(Signature::new_unique().to_string().as_bytes().to_owned());
             statuses.push(rand::thread_rng().gen_range(0..2) as u8);
         }
+
+        let mut msg_hashes = vec![];
+        for _ in 0..100 {
+            let mut msg_hash = [0u8; 32];
+            let _ = rand::thread_rng().fill_bytes(&mut msg_hash);
+            msg_hashes.push(msg_hash.as_ref().to_owned());
+            statuses.push(rand::thread_rng().gen_range(0..2) as u8);
+        }
+
         save_to_file(
-            sigs.iter()
-                .map(|s| from_utf8(s).unwrap().to_string())
+            msg_hashes.iter()
+                .map(|s| Hash::new(&s))
                 .zip(statuses.clone().into_iter())
-                .collect::<Vec<(String, u8)>>(),
+                .collect::<Vec<(Hash, u8)>>(),
             String::from("src/data.json"),
         )
         .unwrap();
-        let data: Vec<(Vec<u8>, u8)> = sigs
+
+        let data: Vec<(Vec<u8>, u8)> = msg_hashes
             .clone()
             .into_iter()
             .map(|s| s)
@@ -218,7 +229,7 @@ mod tests {
         // println!("check 2 {:?}", data[0]);
         let mut data = data
             .iter_mut()
-            .map(|item| item.0.as_bytes())
+            .map(|item| item.0.as_ref())
             .collect::<Vec<&[u8]>>();
 
         // let tree = MerkleTree::new(data.as_slice());
