@@ -3,19 +3,22 @@ use std::str::from_utf8;
 use firedancer_sys::ballet::*;
 use rand::{Rng, RngCore};
 use solana_merkle_tree::MerkleTree;
-use solana_sdk::{signature::Signature, transaction::{SanitizedTransaction, Transaction}};
+use solana_sdk::{
+    signature::Signature,
+    transaction::{SanitizedTransaction, Transaction},
+};
 use {glassbench::*, tiny_merkle_bench::*};
-
+pub const LSIZE: usize = 5 * 10_usize.pow(5);
 fn fd_merkle(b: &mut Bench) {
-    let mut sigs = vec![];
+    // let mut sigs = vec![];
     let mut statuses = vec![];
-    for _ in 0..1000000 {
-        sigs.push(Signature::new_unique().to_string().as_bytes().to_owned());
+    for _ in 0..LSIZE {
+        // sigs.push(Signature::new_unique().to_string().as_bytes().to_owned());
         statuses.push(rand::thread_rng().gen_range(0..2) as u8);
     }
 
     let mut msg_hashes = vec![];
-    for _ in 0..1000000 {
+    for _ in 0..LSIZE {
         // let st = SanitizedTransaction::from_transaction_for_tests(Transaction::default());
         let mut msg_hash = [0u8; 32];
         let _ = rand::thread_rng().fill_bytes(&mut msg_hash);
@@ -30,19 +33,28 @@ fn fd_merkle(b: &mut Bench) {
     //     String::from("src/data.json"),
     // )
     // .unwrap();
-    let data: Vec<(Vec<u8>, u8)> = msg_hashes.into_iter().zip(statuses.clone().into_iter()).collect();
+    let data: Vec<(Vec<u8>, u8)> = msg_hashes
+        .into_iter()
+        .zip(statuses.clone().into_iter())
+        .collect();
     // let fd_data = data[0..1000].to_vec();
 
-    b.task("Firedancer bmtree32 | 1M Leaves | Message Hash + Status", |task| {
-        task.iter(|| {
-            let leaves = vec![];
-            let leaves = generate_leaf_nodes(data.to_vec().clone(), leaves, 1000000);
+    b.task(
+        format!(
+            "Firedancer bmtree32 | {} Leaves | Message Hash + Status",
+            LSIZE
+        ),
+        |task| {
+            task.iter(|| {
+                let leaves = vec![];
+                let leaves = generate_leaf_nodes(data.to_vec().clone(), leaves, LSIZE as u64);
 
-            let (_tree, _root_mem) = generate_merkle_tree(100000, leaves);
-            // let root = get_root_from_tree(unsafe { &mut *root_mem });
-            // println!("Firedancer's root {:?}", root.to_string());
-        });
-    });
+                let (_tree, _root_mem) = generate_merkle_tree(LSIZE as u64, leaves);
+                // let root = get_root_from_tree(unsafe { &mut *root_mem });
+                // println!("Firedancer's root {:?}", root.to_string());
+            });
+        },
+    );
     let data = data
         .iter()
         .map(|item| vec![item.0.clone(), item.1.to_be_bytes().to_vec()])
@@ -52,15 +64,24 @@ fn fd_merkle(b: &mut Bench) {
     //     .iter()
     //     .map(|item| item.0.as_slice())
     //     .collect::<Vec<&[u8]>>();
-    b.task("solana-merkle-tree | 1M Leaves | Message Hash + Status", |task| {
-        task.iter(|| {
-            let _tree = MerkleTree::new_custom(data.clone());
-            // println!(
-            //     "Solana Labs's root {:?}",
-            //     tree.get_root().unwrap().to_string()
-            // );
-        });
-    });
+    b.task(
+        format!(
+            "solana-merkle-tree | {} Leaves | Message Hash + Status",
+            LSIZE
+        ),
+        |task| {
+            task.iter(|| {
+                let _tree = MerkleTree::new_custom(data.clone());
+                // println!(
+                //     "Solana Labs's root {:?}",
+                //     tree.get_root().unwrap().to_string()
+                // );
+            });
+        },
+    );
 }
 
-glassbench!("Benchmark merkle tree with Solana transaction message hashes", fd_merkle,);
+glassbench!(
+    "Benchmark merkle tree with Solana transaction message hashes",
+    fd_merkle,
+);

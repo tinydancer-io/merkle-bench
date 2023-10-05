@@ -144,7 +144,8 @@ mod tests {
         }
 
         save_to_file(
-            msg_hashes.iter()
+            msg_hashes
+                .iter()
                 .map(|s| Hash::new(&s))
                 .zip(statuses.clone().into_iter())
                 .collect::<Vec<(Hash, u8)>>(),
